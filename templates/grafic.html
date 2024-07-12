@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico Interativo com Chart.js</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Estilos personalizados específicos para esta página -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        /* Estilos para a barra lateral */
+        #sidebar {
+            height: 100%;
+            width: 250px;
+            background-color: #007bff;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            overflow: hidden;
+            position: fixed;
+        }
+        
+        /* Estilos para o cabeçalho da barra lateral */
+        .sidebar-heading {
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            color: white;
+        }
+        
+        #sidebar .list-group-item {
+            color: white;
+            border: none;
+        }
+
+        #sidebar .list-group-item:hover {
+            background-color: #0056b3;
+        }
+
+        .list-group-item {
+            border: none;
+            color: #ddd;
+            padding: 20px;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .list-group-item:hover, 
+        .list-group-item.active {
+            background-color: #0056b3;
+            color: #fff;
+        }
+
+        .list-group-item i {
+            margin-right: 10px; /* Espaçamento entre o ícone e o texto */
+        }
+
+        /* Estilos para o conteúdo da página */
+        #page-content-wrapper {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 20px;
+        }
+        
+        .jumbotron {
+            background: linear-gradient(90deg, rgba(0,123,255,1) 0%, rgba(0,210,255,1) 100%);
+            color: white;
+            padding: 2rem;
+        }
+
+        .card {
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card-body i {
+            color: #007bff;
+        }
+
+        .testimonial {
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1rem;
+        }
+
+        footer {
+            background-color: #007bff;
+            color: white;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        /* Estilos responsivos */
+        @media (max-width: 767.98px) {
+            #sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            #sidebar .list-group-item {
+                text-align: center;
+                padding: 10px;
+            }
+            #page-content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+            .jumbotron {
+                padding: 1rem;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            #sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            #sidebar .list-group-item {
+                text-align: center;
+                padding: 10px;
+            }
+            #page-content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+            .jumbotron {
+                padding: 1rem;
+            }
+        }
+
+        /* Estilos para o container do gráfico */
+        #chart-container {
+            width: 100%;
+            max-width: 600px; /* Reduzindo o tamanho máximo */
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        #info {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #click-data {
+            margin-top: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        #click-data h4 {
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper" class="d-flex">
+        <!-- Menu Lateral -->
+        <div id="sidebar">
+            <div class="sidebar-heading text-center py-4 text-white fs-4 fw-bold text-uppercase border-bottom">
+                <i class="fas fa-user-secret me-2"></i> Meu Site <!-- Adicionado um espaço após "Meu Site" -->
+            </div>
+            <!-- Lista de links do menu -->
+            <div class="list-group list-group-flush my-3">
+                <a href="{{ url_for('home') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fas fa-home me-2"></i> <span>Home</span> <!-- Adicionado um espaço após o ícone -->
+                </a>
+                <a href="{{ url_for('features') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fas fa-cogs me-2"></i> <span>Features</span> <!-- Adicionado um espaço após o ícone -->
+                </a>
+                <a href="{{ url_for('mostrar_grafico') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fas fa-chart-line me-2"></i> <span>Gráfico</span> <!-- Adicionado um espaço após o ícone -->
+                </a>
+                <a href="{{ url_for('contact') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                    <i class="fas fa-envelope me-2"></i> <span>Contact</span> <!-- Adicionado um espaço após o ícone -->
+                </a>
+                <!-- Verificação de sessão para exibir links de login/logout -->
+                {% if 'logged_in' in session %}
+                    <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fas fa-sign-out-alt me-2"></i><span>Logout ({{ session['username'] }})</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('register') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fas fa-user-plus me-2"></i><span>Cadastro</span>
+                    </a>
+                    <a href="{{ url_for('login') }}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+                        <i class="fas fa-sign-in-alt me-2"></i><span>Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Conteúdo da Página -->
+        <div id="page-content-wrapper">
+            <div id="chart-container">
+                <canvas id="myChart" aria-label="Gráfico de Vendas" role="img"></canvas>
+                <div id="info"></div>
+            </div>
+
+            <!-- Lista de dados de acessos -->
+            <div id="click-data">
+                <h4>Dados de Acessos Recentes</h4>
+                <ul id="access-list">
+                    <!-- Os dados serão preenchidos dinamicamente com JavaScript -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        async function fetchClickData() {
+            const response = await fetch('/get_click_data');
+            const data = await response.json();
+            return data.click_data;
+        }
+        
+        async function renderChart() {
+            const clickData = await fetchClickData();
+            const data = clickData.map(item => item[1]);
+            const labels = clickData.map(item => item[0]); // Array com os nomes das URLs
+        
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from(Array(data.length).keys()), // Utiliza índices numéricos como labels
+                    datasets: [{
+                        label: 'Número de Cliques',
+                        data: data,
+                        backgroundColor: '#007bff',
+                        borderColor: '#007bff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' cliques';
+                                    }
+                                    return label;
+                                },
+                                title: function(tooltipItem) {
+                                    return labels[tooltipItem[0].index]; // Retorna o nome da URL para o tooltip
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        
+            // Exibir os dados de clique recentes
+            const accessList = document.getElementById('access-list');
+            accessList.innerHTML = ''; // Limpa a lista antes de adicionar novos itens
+            clickData.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${labels[index]}: ${item[1]} cliques`; // Exibe o nome da URL e o número de cliques
+                accessList.appendChild(li);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            renderChart();
+        
+            // Atualizar o gráfico a cada 30 segundos
+            setInterval(() => {
+                const chartContainer = document.getElementById('chart-container');
+                chartContainer.innerHTML = '<canvas id="myChart" aria-label="Gráfico de Vendas" role="img"></canvas><div id="info"></div>';
+                renderChart();
+            }, 10000);
+        });
+        
+    </script>
+
+    <!-- Bootstrap JavaScript e outros scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
